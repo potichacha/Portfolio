@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "preEdit": [
+      {
+        "path": "core-api/src/**/*.java",
+        "command": "echo '⚠️  Modifying Core API Java file — remember: no Lombok, no raw SQL, records for DTOs'"
+      },
+      {
+        "path": "runner-service/src/**/*.java",
+        "command": "echo '⚠️  Modifying Runner Service — remember: Docker SDK, isolated network, resource limits'"
+      },
+      {
+        "path": "core-api/src/**/ai/**",
+        "command": "echo '⚠️  Modifying AI module — remember: prompt templates in config, retry with backoff, mask API keys in logs'"
+      },
+      {
+        "path": "core-api/resources/db/migration/**",
+        "command": "echo '⚠️  Modifying Flyway migration — NEVER edit an existing migration, only add new ones. Check the latest V number.'"
+      }
+    ],
+    "postEdit": [
+      {
+        "path": "core-api/src/main/**/*.java",
+        "command": "cd core-api && mvn compile -q 2>&1 | tail -5",
+        "description": "Quick compile check after editing Core API"
+      },
+      {
+        "path": "runner-service/src/main/**/*.java",
+        "command": "cd runner-service && mvn compile -q 2>&1 | tail -5",
+        "description": "Quick compile check after editing Runner Service"
+      }
+    ],
+    "preCommit": [
+      {
+        "command": "cd core-api && mvn test -q 2>&1 | tail -10",
+        "description": "Run Core API tests before commit"
+      },
+      {
+        "command": "cd core-api && mvn checkstyle:check -q 2>&1 | tail -5",
+        "description": "Check code style before commit"
+      },
+      {
+        "command": "grep -rn 'TODO\\|FIXME\\|HACK\\|XXX' --include='*.java' core-api/src/main/ runner-service/src/main/ | head -10 && echo '--- Check TODOs above before committing ---'",
+        "description": "Flag remaining TODOs"
+      },
+      {
+        "command": "grep -rn 'password\\|secret\\|token\\|apikey\\|api_key' --include='*.java' -i core-api/src/main/ runner-service/src/main/ | grep -v '@ConfigProperty' | grep -v 'test' | grep -v '//' | head -5 && echo '--- ⚠️  Check for hardcoded secrets above ---'",
+        "description": "Scan for potential hardcoded secrets"
+      }
+    ]
+  }
+}

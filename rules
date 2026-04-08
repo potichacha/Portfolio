@@ -1,0 +1,70 @@
+# PortLoko — Rules for Claude Code
+
+## Before writing any code
+- Read the relevant section of CLAUDE.md
+- Check existing code in the same package for patterns and conventions
+- If creating a new entity, check resources/db/migration/ for the latest migration number
+
+## Java / Quarkus rules
+- Use Java 21 features: records, sealed interfaces, pattern matching, text blocks
+- All entity IDs are UUID, generated with @GeneratedValue(strategy = GenerationType.UUID)
+- Use PanacheEntityBase (not PanacheEntity) to allow UUID PKs
+- All endpoints return Response objects with proper HTTP status codes
+- Use @Inject for dependency injection (CDI), never new Service()
+- Use @Transactional on service methods that write to DB, never on resources
+- All public service methods must have corresponding test methods
+- DTO records go in the same package as the resource that uses them
+- Use Optional.ofNullable() for nullable fields, never return null from services
+
+## REST API rules
+- Every endpoint must have @Path, @Produces(MediaType.APPLICATION_JSON), and proper @Tag for OpenAPI
+- Authenticated endpoints: @Authenticated annotation + inject SecurityContext
+- Owner-only endpoints: check securityContext.getUserPrincipal() == resource.ownerId, throw 403 otherwise
+- Pagination: always cursor-based. Accept `cursor` (UUID) and `limit` (int, default 20, max 100) params
+- Response format: wrap in { "data": [...], "cursor": "next-cursor-or-null" } for lists
+- Error format: { "error": "Human message", "code": "MACHINE_CODE" }
+
+## Database rules
+- Flyway migrations only — never alter DB manually
+- Migration naming: V{next_number}__{snake_case_description}.sql
+- Always add indexes on FK columns and frequently queried fields
+- Use TIMESTAMP WITH TIME ZONE for all date fields
+- Soft delete: use deletedAt TIMESTAMP column, filter in queries with WHERE deletedAt IS NULL
+- Denormalized counters (likesCount, followersCount): update atomically with SET count = count + 1
+
+## Testing rules
+- Test file naming: {ClassName}Test.java in the same package under src/test/
+- Use @QuarkusTest for integration tests, plain JUnit 5 + Mockito for unit tests
+- Mock external services (GitHub API, Claude API) with WireMock or Mockito
+- Every PR must not decrease test coverage
+- Test both happy path and error cases (401, 403, 404, 409, 429)
+
+## Security rules — non-negotiable
+- NEVER concatenate strings into SQL queries
+- NEVER log tokens, passwords, or API keys — use a masked logger
+- NEVER store secrets in code, always use @ConfigProperty from env vars
+- NEVER expose Docker socket to user containers
+- ALWAYS validate and sanitize user input via Bean Validation (@Valid)
+- ALWAYS use HttpOnly cookies for JWT, never localStorage
+- ALWAYS encrypt GitHub tokens with AES-GCM before storing in DB
+
+## Docker / Container rules
+- User-deployed containers run on isolated bridge network (portloko-user-net)
+- Limits: --pids-limit 200, --cpus per template, --memory per template
+- Build timeout: 10 minutes, hard kill
+- No volume mounts from host into user containers
+- Egress: DNS + HTTPS only, everything else blocked
+
+## Git rules
+- Branch from develop, never from main
+- Branch naming: feature/BACK-{id}-{short-desc} or fix/BACK-{id}-{short-desc}
+- Commit messages: conventional commits (feat, fix, test, refactor, docs, chore)
+- Scope = module name: feat(auth): add GitHub OAuth callback
+- One logical change per commit — don't mix feature + refactor
+- PR description must reference the issue: "Closes #BACK-015"
+
+## When you're unsure
+- Check the spec document (portloko-spec-v3.pdf) for business rules
+- Check existing code for established patterns before inventing new ones
+- Ask rather than assume — especially for security-related decisions
+- If a task seems > 8 story points, suggest breaking it down
