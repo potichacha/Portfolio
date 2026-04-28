@@ -1,0 +1,37 @@
+name: Core API CI
+
+on:
+  pull_request:
+    paths:
+      - "core-api/**"
+      - ".github/workflows/core-api-ci.yml"
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "core-api/**"
+      - ".github/workflows/core-api-ci.yml"
+
+jobs:
+  validate:
+    name: Validate Quarkus Core API
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: core-api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Validate
+        run: mvn -B -ntp clean verify
