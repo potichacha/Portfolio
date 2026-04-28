@@ -1,0 +1,25 @@
+# Maven build output
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Maven wrapper jar (downloaded automatically)
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+
+# Secrets & config locale
+.env
+.env.local
+application-local.properties
+core-api/src/main/resources/keys/
+
+# OS
+.DS_Store
+Thumbs.db
