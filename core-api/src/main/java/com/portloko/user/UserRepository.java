@@ -17,6 +17,10 @@ public class UserRepository implements PanacheRepository<User> {
         return find("handle = ?1 AND deletedAt IS NULL", handle).firstResultOptional();
     }
 
+    public boolean activeHandleExistsForAnotherUser(String handle, UUID userId) {
+        return count("handle = ?1 AND id <> ?2 AND deletedAt IS NULL", handle, userId) > 0;
+    }
+
     public Optional<User> findActiveByGithubUserId(Long githubUserId) {
         return find("githubUserId = ?1 AND deletedAt IS NULL", githubUserId).firstResultOptional();
     }
