@@ -6,8 +6,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -45,7 +49,11 @@ public class User extends PanacheEntityBase {
     @Column(name = "github_login", nullable = false)
     public String githubLogin;
 
-    // scopes added by BACK-001 (auth module) as @ElementCollection
+    /** OAuth scopes granted at GitHub login (BACK-5). Stored as a SQL text array. */
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "scopes", nullable = false)
+    public List<String> scopes = new ArrayList<>();
+
     @Column(name = "created_at", nullable = false)
     public OffsetDateTime createdAt;
 

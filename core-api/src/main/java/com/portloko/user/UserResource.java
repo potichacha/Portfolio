@@ -1,5 +1,6 @@
 package com.portloko.user;
 
+import com.portloko.auth.CurrentUser;
 import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -8,15 +9,11 @@ import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-
-import java.util.UUID;
 
 @Path("/v1")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -27,15 +24,17 @@ public class UserResource {
     @Inject
     UserService userService;
 
+    @Inject
+    CurrentUser currentUser;
+
     @GET
     @Path("/me")
     @Authenticated
     @Operation(summary = "Get current user profile")
     @APIResponse(responseCode = "200", description = "Authenticated user profile")
     @APIResponse(responseCode = "401", description = "Missing or invalid JWT")
-    public Response getMe(@Context SecurityContext securityContext) {
-        UUID userId = UUID.fromString(securityContext.getUserPrincipal().getName());
-        UserResponse userResponse = userService.getById(userId);
+    public Response getMe() {
+        UserResponse userResponse = userService.getById(currentUser.requireId());
         return Response.ok(userResponse).build();
     }
 
@@ -47,12 +46,8 @@ public class UserResource {
     @APIResponse(responseCode = "400", description = "Invalid handle or bio")
     @APIResponse(responseCode = "401", description = "Missing or invalid JWT")
     @APIResponse(responseCode = "409", description = "Handle already taken")
-    public Response updateProfile(
-            @Context SecurityContext securityContext,
-            UpdateProfileRequest request
-    ) {
-        UUID userId = UUID.fromString(securityContext.getUserPrincipal().getName());
-        UserResponse userResponse = userService.updateProfile(userId, request);
+    public Response updateProfile(UpdateProfileRequest request) {
+        UserResponse userResponse = userService.updateProfile(currentUser.requireId(), request);
         return Response.ok(userResponse).build();
     }
 
