@@ -1,0 +1,29 @@
+# PortLoko — local development services.
+#
+# For now this only provides PostgreSQL, which the Core API needs to run
+# (tests use in-memory H2 and do NOT need this). The full stack (Traefik,
+# Runner, isolated project network) arrives with BACK-2/3/4.
+#
+# Start it with:  docker compose up -d
+# Stop it with:   docker compose down       (add -v to also wipe the data)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: portloko-postgres
+    environment:
+      POSTGRES_USER: portloko
+      POSTGRES_PASSWORD: portloko
+      POSTGRES_DB: portloko
+    ports:
+      - "5432:5432"
+    volumes:
+      - portloko_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portloko -d portloko"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  portloko_pgdata:
